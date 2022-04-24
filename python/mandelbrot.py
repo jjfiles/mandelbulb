@@ -59,12 +59,44 @@ void main(){
 }
 """
 
-def make_shader():
-	pass
+def make_shader(shader_type, src):
+	shader = gl.glCreateShader(shader_type)
+	gl.glShaderSource(shader, src)
+	gl.glCompileShader(shader)
+	status = gl.glGetShaderiv(shader, gl.GL_COMPILE_STATUS)
+	if status == gl.GL_FALSE:
+		strInfoLog = gl.glGetShaderInfoLog(shader).decode('ascii')
+		strShaderType = ""
+		if shader_type is gl.GL_VERTEX_SHADER:
+			strShaderType = "vertex"
+		elif shader_type is gl.GL_GEOMETRY_SHADER:
+			strShaderType = "geometry"
+		elif shader_type is gl.GL_FRAGMENT_SHADER:
+			strShaderType = "fragment"
+		
+		raise Exception("Compilation failure for " + strShaderType + " shader:\n" + strInfoLog)
 
-def make_prgram():
-	pass
+	return shader
 
+def make_prgram(shader_list):
+	program = gl.glCreateProgram()
+
+	for shader in shader_list:
+		gl.glAttachShader(program, shader)
+	
+	gl.glLinkProgram(program)
+
+	status = gl.glGetProgramiv(program, gl.GL_LINK_STATUS)
+
+	if status == gl.GL_FALSE:
+		strInfoLog = gl.glGetProgramInfoLog(program)
+		raise Exception("Linker failure: \n" + strInfoLog)
+	
+	for shader in shader_list:
+		gl.glDetachShader(program, shader)
+
+	return program
+	
 def main():
 	if not glfw.init():
 		return
