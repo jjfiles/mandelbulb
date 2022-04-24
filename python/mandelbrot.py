@@ -196,11 +196,30 @@ def main():
 		if change:
 			print("Current center: ", state['pos_x'], state['pos_y'])
 
+	glfw.set_char_callback(window, char_callback)
+	glfw.set_key_callback(window, key_callback)
+	time_before = glfw.get_time()
 
-
+	print("use +/- to zoom in/out")
+	print("use [/] to increase/decrease max_iters")
+	print("use arrows to pan")
 
 	while not glfw.window_should_close(window):
-		continue
+		zoom = state['zoom']
+		pos_x = state['pos_x']
+		pos_y = state['pos_y']
+		gl.glUniformMatrix3dv(transform_loc, 1, False,
+			numpy.array([aspect * zoom, 0, pos_x, 0, 1 * zoom, pos_y, 0, 0, 1 * zoom], dtype='float64'))
+		gl.glUniform1i(max_iters_loc, int(state['max_iters']))
+
+		gl.glDrawArrays(gl.GL_TRIANGLES, 0, int(len(vert_values) / 3))
+		time = glfw.get_time()
+		print("frame render time", time - time_before)
+		time_before = time
+
+		gl.glFlush()
+
+		glfw.wait_events()
 
 	glfw.terminate()
 
