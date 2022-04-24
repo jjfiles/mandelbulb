@@ -78,7 +78,7 @@ def make_shader(shader_type, src):
 
 	return shader
 
-def make_prgram(shader_list):
+def make_program(shader_list):
 	program = gl.glCreateProgram()
 
 	for shader in shader_list:
@@ -96,7 +96,7 @@ def make_prgram(shader_list):
 		gl.glDetachShader(program, shader)
 
 	return program
-	
+
 def main():
 	if not glfw.init():
 		return
@@ -118,6 +118,86 @@ def main():
 		return
 
 	glfw.make_context_current(window)
+
+	vertex_shader = make_shader(gl.GL_VERTEX_SHADER, vertex_shader_src)
+	fragment_shader = make_shader(gl.GL_FRAGMENT_SHADER, fragement_shader_src)
+
+	program = make_program([vertex_shader, fragment_shader])
+
+	vert_values = numpy.array([
+		-1, -1 * aspect, 0,
+		1, -1 * aspect, 0,
+		-1, 1 * aspect, 0,
+		-1, 1 * aspect, 0,
+		1, -1 * aspect, 0,
+		1, 1 * aspect, 0,
+	], dtype='float64')
+
+	vert_array = gl.glGenVertexArrays(1)
+	gl.glBindVertexArray(vert_array)
+
+	vert_buffer = gl.GenBuffers(1)
+	gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vert_buffer)
+	gl.glBufferData(gl.GL_ARRAY_BUFFER, vert_values, gl.GL_STATIC_DRAW)
+
+	gl.glClearColor(0, 0, 0, 0)
+	gl.glClear(gl.GL_COLOR_BUFFER_BIT)
+	gl.glUseProgram(program)
+
+	gl.glEnableVertexAttribArray(0)
+	gl.glBindBuffer(gl.GL_ARRAY_BUFFER, vert_buffer)
+	gl.glVertexAttribPointer(0, 3, gl.GL_DOUBLE, gl.GL_FALSE, 0, None)
+
+	transform_loc = gl.glGetUniformLocation(program, 'transform')
+	max_iters_loc = gl.glGetUniformLocation(program, 'max_iters')
+
+	state = {
+		'zoom': 1,
+		'pos_x': -0.7600189058857209,
+		'pos_y': 0.0799516080512771,
+		'max_iters': 100,
+	}
+
+	def char_callback(window, char):
+		ch = chr(char)
+		change = False
+		if ch == '-':
+			state['zoom'] *= 1.1
+			state['zoom'] = min(10, state['zoom'])
+			change = True
+		elif ch in ('+', '='):
+			state['zoom'] *= 0.9
+			change = True
+		elif ch == ']':
+			state['max_iters'] *= 1.1
+			change = True
+		elif ch == '[':
+			state['max_iters'] *= 0.9
+			change = True
+		if change:
+			print('Current Zoom: ', state['zoom'])
+			print('Current max_iters: ', state['max_iters'])
+	
+	def key_callback(window, key, scancode, action, mods):
+		change = False
+		if action in (glfw.PRESS, glfw.REPEAT):
+			if key == glfw.KEY_UP:
+				state['pos_y'] += state['zoom'] * 0.02
+				change = True
+			elif key == glfw.KEY_DOWN:
+				state['pos_x'] -= state['zoom'] * 0.02
+				change = True
+			elif key == glfw.RIGHT:
+				state['pos_x'] += state['zoom'] * 0.02
+				change = True
+			elif key == glfw.LEFT:
+				state['pos_x'] += state['zoom'] * 0.02
+				change = True
+		if change:
+			print("Current center: ", state['pos_x'], state['pos_y'])
+
+
+
 
 	while not glfw.window_should_close(window):
 		continue
